@@ -1,10 +1,13 @@
-name: My First CI Pipeline
+name: Python CI CD Pipeline
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
+  # Job 1: Build, test and package
   build-and-test:
     runs-on: ubuntu-latest
 
@@ -19,3 +22,46 @@ jobs:
 
       - name: Run tests
         run: python -m unittest -v
+
+      - name: Package application
+        run: |
+          mkdir -p dist
+          cp app.py test_app.py dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: dist/
+
+  # Job 2: Deploy to staging
+  deploy-staging:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+          path: dist/
+
+      - name: Deploy to Staging
+        run: echo "Deploying Python application to Staging..."
+
+  # Job 3: Deploy to production
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+          path: dist/
+
+      - name: Deploy to Production
+        run: echo "Deploying Python application to Production..."
